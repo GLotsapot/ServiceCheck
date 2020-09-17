@@ -12,8 +12,6 @@ function GetServiceStatus {
         try{
             ## Get a list of services and status
             Get-Service -ComputerName $service.Server -Include $service.Services
-
-            ##TODO: check if the status of any services are not Running, and 
         }
         catch {
             ## If an error happens geting service status from sever, add error to a list and raise email priority
@@ -33,10 +31,19 @@ function GetServiceStatusHtml {
         $serviceList
     )
 
-    '<h1>' + $title + '</h1>'
-    GetServiceStatus -serviceList $serviceList |
+    $ServiceStatus = GetServiceStatus -serviceList $serviceList
+    foreach ($service in $ServiceStatus) 
+    {
+        # If server is not running, and service starttype is not disabled, increase the email priority
+        if(($service.Status -ne 4) -and ($service.StartType -ne 4))
+        {
+            $global:mailPriority = 'High'
+        }
+    }
+
+    $ServiceStatus |
         Sort-Object -Property Status, MachineName, DisplayName |
-        ConvertTo-Html -Fragment -As Table -Property MachineName, DisplayName, Status, StartType
+        ConvertTo-Html -Fragment -As Table -Property MachineName, DisplayName, Status, StartType -PreContent @('<h1>' + $title + '</h1>')
 }
 
 ##############  Script Variables ############## 
@@ -148,7 +155,6 @@ $mailBody += GetServiceStatusHtml -title 'User Matrix Servers' -serviceList $umx
 
 $mailBody += $errorList | ConvertTo-Html -Fragment -As Table -PreContent '<h1 style="color: red;">Error Listing</h1>'
 
-Write-Host '!! Errors found !!'
 $errorList | FT
 
 
