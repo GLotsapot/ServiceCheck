@@ -9,12 +9,14 @@ function GetServiceStatus {
 
     foreach ($service in $serviceList) 
     {
-        #TODO: Wrap this in a try/catch to avoid whole section failing
         try{
+            ## Get a list of services and status
             Get-Service -ComputerName $service.Server -Include $service.Services
+
+            ##TODO: check if the status of any services are not Running, and 
         }
         catch {
-            #TODO: Add errors to an array for displaying out of the group
+            ## If an error happens geting service status from sever, add error to a list and raise email priority
             $err = New-Object System.Object
             $err | Add-Member -MemberType NoteProperty -Name "Server" -Value $service.Server
             $err | Add-Member -MemberType NoteProperty -Name "Error" -Value $_
@@ -104,16 +106,14 @@ $umxServiceList = @(
 $mailServer = "mail.gcgc.services"
 $mailFrom = "Service Reporter <ogelp.servicereporter@gcgaming.com>"
 $mailTo = "speacock@shorelinescasinos.com"
-#$mailTo = "administrator@srvapp01.necrosoft.ca"
 $mailSubject = "Service Status Report - " + @(Get-Date)
 
 $mailStyle = "<style>"
 $mailStyle += "body {font-family: 'Segoe UI', Arial;}"
 $mailStyle += "table {background-color: white; border: thin solid black; width: 100%;}"
-#$mailStyle += "h1 {font-size: 12pt;}"
 $mailStyle += "th {background-color: gray;color: white;}"
-#$mailStyle += "tr:nth-child(odd) {background-color: silver;}"
-#$mailStyle += "td:first-child {font-weight: bold; text-align: center;}"
+$mailStyle += "tr:nth-child(odd) {background-color: silver;}"
+$mailStyle += "td:first-child {font-weight: bold; text-align: center;}"
 $mailStyle += "</style>"
 
 
