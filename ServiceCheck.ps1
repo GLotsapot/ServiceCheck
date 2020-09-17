@@ -20,9 +20,9 @@ function GetServiceStatus {
             $err = New-Object System.Object
             $err | Add-Member -MemberType NoteProperty -Name "Server" -Value $service.Server
             $err | Add-Member -MemberType NoteProperty -Name "Error" -Value $_
-
             $Global:errorList.Add($err) | Out-Null
-            $global:mailPriority = 'Normal'
+
+            $global:mailPriority = 'High'
         }
     }
 }
@@ -33,17 +33,10 @@ function GetServiceStatusHtml {
         $serviceList
     )
 
-    try {
-        '<h1>' + $title + '</h1>'
-        GetServiceStatus -serviceList $serviceList |
-            Sort-Object -Property Status, MachineName, DisplayName |
-            ConvertTo-Html -Fragment -As Table -Property MachineName, DisplayName, Status, StartType
-    }
-    catch {
-        # If there is an error getting any of the server info, display the error and mark email as high priority
-        $_
-        $global:mailPriority = 'High'
-    }
+    '<h1>' + $title + '</h1>'
+    GetServiceStatus -serviceList $serviceList |
+        Sort-Object -Property Status, MachineName, DisplayName |
+        ConvertTo-Html -Fragment -As Table -Property MachineName, DisplayName, Status, StartType
 }
 
 ##############  Script Variables ############## 
