@@ -15,7 +15,11 @@ function GetServiceStatus {
         }
         catch {
             #TODO: Add errors to an array for displaying out of the group
-            $Global:errorList += [PSCustomObject]@{Server=$service.Server;Err=$_}
+            $err = New-Object System.Object
+            $err | Add-Member -MemberType NoteProperty -Name "Server" -Value $service.Server
+            $err | Add-Member -MemberType NoteProperty -Name "Error" -Value $_
+
+            $Global:errorList.Add($err) | Out-Null
             $global:mailPriority = 'Normal'
         }
     }
@@ -114,8 +118,7 @@ $mailStyle += "</style>"
 
 
 ##############  Script Logic ############## 
-$errorList = $null
-$errorList = @()
+$errorList = New-Object System.Collections.ArrayList
 
 $mailBody = $null
 $mailBody = @()
@@ -150,12 +153,10 @@ Write-Host 'Getting UMX Servers services'
 $mailBody += GetServiceStatusHtml -title 'User Matrix Servers' -serviceList $umxServiceList
 
 
-$mailBody += ConvertTo-Html -Fragment -As Table -PreContent 'Error Listing' -InputObject $errorList
+$mailBody += $errorList | ConvertTo-Html -Fragment -As Table -PreContent '<h1 style="color: red;">Error Listing</h1>'
 
 Write-Host '!! Errors found !!'
-foreach ($err in $errorList) {
-    Write-Host $err
-}
+$errorList | FT
 
 
 ##### Send email report
