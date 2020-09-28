@@ -2,6 +2,13 @@
 #$ErrorActionPreference = "inquire" # Used/Uncommented when troubleshooting
 
 ##############  Script Functions ############## 
+# Object References
+# ServiceController: https://docs.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicecontroller
+# ServiceControllerStatus: https://docs.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicecontrollerstatus
+# ServiceStartMode: https://docs.microsoft.com/en-us/dotnet/api/system.serviceprocess.servicestartmode
+
+$errorList = New-Object System.Collections.ArrayList
+
 function GetServiceStatus {
     param (
         $serviceList
@@ -19,8 +26,6 @@ function GetServiceStatus {
             $err | Add-Member -MemberType NoteProperty -Name "Server" -Value $service.Server
             $err | Add-Member -MemberType NoteProperty -Name "Error" -Value $_
             $Global:errorList.Add($err) | Out-Null
-
-            $global:mailPriority = 'High'
         }
     }
 }
@@ -35,9 +40,13 @@ function GetServiceStatusHtml {
     foreach ($service in $ServiceStatus) 
     {
         # If server is not running, and service starttype is not disabled, increase the email priority
-        if(($service.Status -ne 4) -and ($service.StartType -ne 4))
+        if(($service.Status -ne 'Running') -and ($service.StartType -ne 'Disabled'))
         {
-            $global:mailPriority = 'High'
+            ## If an error happens geting service status from sever, add error to a list and raise email priority
+            $err = New-Object System.Object
+            $err | Add-Member -MemberType NoteProperty -Name "Server" -Value $service.MachineName
+            $err | Add-Member -MemberType NoteProperty -Name "Error" -Value "$($service.DisplayName) is not in a running state"
+            $Global:errorList.Add($err) | Out-Null
         }
     }
 
@@ -118,8 +127,6 @@ $mailStyle += "</style>"
 
 
 ##############  Script Logic ############## 
-$errorList = New-Object System.Collections.ArrayList
-
 $mailBody = $null
 $mailBody = @()
 $mailPriority = 'Low'
@@ -153,9 +160,12 @@ Write-Host 'Getting UMX Servers services'
 $mailBody += GetServiceStatusHtml -title 'User Matrix Servers' -serviceList $umxServiceList
 
 
-$mailBody += $errorList | ConvertTo-Html -Fragment -As Table -PreContent '<h1 style="color: red;">Error Listing</h1>'
-
-$errorList | FT
+if($errorList.Count -gt 0){
+    Write-Host '!*!*!*!*! Errors were found !*!*!*!*!'
+    $errorList | FT
+    $mailPriority = 'High'
+    $mailBody += $errorList | ConvertTo-Html -Fragment -As Table -PreContent '<h1 style="color: red;">Error Listing</h1>'
+}
 
 
 ##### Send email report
