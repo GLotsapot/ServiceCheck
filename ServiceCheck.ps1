@@ -113,9 +113,9 @@ $umxServiceList = @(
 )
 
 $mailServer = "mail.gcgc.services"
-$mailFrom = "Service Reporter <ogelp.servicereporter@gcgaming.com>"
-$mailTo = "speacock@shorelinescasinos.com"
-$mailSubject = "Service Status Report - " + @(Get-Date)
+$mailFrom = "GMS Service Status <gms_service_status@gcgaming.ca>"
+$mailTo = "OneITGMSSupportTeam@gcgaming.com;"
+$mailSubject = "OGELP GMS Application Service Status Report - " + @(Get-Date)
 
 $mailStyle = "<style>"
 $mailStyle += "body {font-family: 'Segoe UI', Arial;}"
@@ -165,6 +165,8 @@ if($errorList.Count -gt 0){
     $errorList | FT
     $mailPriority = 'High'
     $mailBody += $errorList | ConvertTo-Html -Fragment -As Table -PreContent '<h1 style="color: red;">Error Listing</h1>'
+    #TODO: Reenable the below line to add helpdesk if any errors are detected
+    #$mailTo += "ithelpdesk@gcgaming.com;"
 }
 
 
